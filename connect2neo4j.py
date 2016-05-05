@@ -1,0 +1,175 @@
+from py2neo import authenticate, Graph
+import sys
+from nltk.stem import *
+
+def main():
+    authenticate("localhost:7474", "neo4j", "tinni1989")
+    graph = Graph("http://localhost:7474/db/data/")
+    
+    stemmer = PorterStemmer()
+    
+    #static_nodes_file
+    dynamic_nodes_set = open(sys.argv[1],'r').read().split(' ')
+    query_string = raw_input("Enter Query: ")
+    query = query_string.split(' ')
+    static_nodes=[]
+    dynamic_nodes=[]
+    for keyword in query:
+        count=0;
+        for d in dynamic_nodes_set:
+            if((stemmer.stem(keyword)).lower() == (stemmer.stem(d)).lower()):
+                dynamic_nodes.append(keyword);
+                count=1;
+        if(count==0):
+            static_nodes.append(keyword)
+    
+    print static_nodes
+    
+
+    #dynamic_nodes_file
+    dynamic_nodes_file = open(sys.argv[2],'r').read().split('\n')
+
+
+    for i in xrange(0,len(dynamic_nodes)):
+        for line in dynamic_nodes_file:
+            temp = line.split(" - ")
+            if((stemmer.stem(dynamic_nodes[i])).lower() == (stemmer.stem(temp[0])).lower()):
+                dynamic_nodes[i]=temp[0];
+
+    print dynamic_nodes
+
+    table_name=[];
+    column_name=[];
+    for items in dynamic_nodes:
+        #print items
+        for line in dynamic_nodes_file:
+            #print line
+            temp = line.split(" - ")
+            if(items == temp[0]):
+                table_name.append(temp[1])
+                if(len(temp) ==3):
+                    column_name.append(temp[2])
+                else:
+                    column_name.append(' ');
+                break;
+    print table_name;
+    print column_name;
+
+    temp = set();
+
+    for item in table_name:
+        temp.add(item);
+
+    dict={};
+    count=1;
+    temp1=[];
+    for item in temp:
+        if(count==1):
+            dict[item]="n1"
+            temp1.append(item)
+            s1 = "MATCH(n1:"+item+")"
+        else:
+            dict[item]="n"+str(count)
+            temp1.append(item)
+            s1 += ",(n"+str(count)+":"+item+")"
+        count=count+1;
+    print s1
+    print temp1
+
+    flag=0;
+    if(len(temp)>1):
+        s1+=" WHERE ";
+        flag=1;
+
+    for i in xrange(1,len(temp1)):
+        if(i>1):
+            s1+=" AND "
+        s1=WHERE_portion(temp1[0],temp1[i],s1,dict);
+    print s1;
+
+    for i in xrange(0,len(column_name)):
+        if(column_name[i] != ' ' and column_name[i] != dynamic_nodes[i]):
+            if flag==0:
+                flag=1;
+                s1+=" WHERE "
+            elif(i>0):
+                s1+=" AND "
+            s1+= dict[table_name[i]]+"."+column_name[i]+" = \'"+dynamic_nodes[i]+"\'"
+
+    print s1
+
+    s1+=" RETURN "
+    already=0;
+    if 'many' in static_nodes or 'count' in static_nodes or 'number' in static_nodes :
+        for i in xrange(0,len(dynamic_nodes)):
+            if(column_name[i] != dynamic_nodes[i] and already==0):
+                if(already>0):
+                    s1+=","
+                s1+=" COUNT(*) "
+                already=1;
+                break;
+            elif(column_name[i] == dynamic_nodes[i]):
+                if(already>0):
+                    s1+=","
+                s1+= dict[table_name[i]]+"."+dynamic_nodes[i]
+                already=1;
+    else:
+        for i in xrange(0,len(dynamic_nodes)):
+            if(column_name[i] == dynamic_nodes[i]):
+                if(already>0):
+                    s1+=","
+                s1+= dict[table_name[i]]+"."+dynamic_nodes[i]
+                already=1;
+    if('who' in static_nodes):
+        s1+= " , "+dict['Users']+".Name"
+
+
+
+    print s1
+    if 'maximum' in static_nodes or 'minimum' in static_nodes or 'order' in static_nodes :
+        s1+=" ORDER BY toInt("
+        if 'maximum' in static_nodes:
+            keyword = 'maximum'
+        elif 'minimum' in static_nodes:
+            keyword = 'minimum'
+        else:
+            keyword ='order'
+        befor_keyowrd, keyword, after_keyword = query_string.partition(keyword)
+
+
+        for item in after_keyword.split(' '):
+            b=0;
+            for item1 in dynamic_nodes:
+                if((stemmer.stem(item1)).lower() == (stemmer.stem(item)).lower()):
+                    order_by =item1;
+                    order_by_table_name = table_name[dynamic_nodes.index(item1)]
+                    b=1;
+                    break;
+            if(b==1):
+                break;
+    
+        s1+=dict[order_by_table_name]+"."+order_by+")"
+        
+        if 'maximum' in static_nodes:
+            s1+=" DESC LIMIT 1"
+        if 'minimum' in static_nodes:
+            s1+= " LIMIT 1"
+    
+    print s1
+    results=graph.cypher.execute(s1);
+    print results
+
+
+def WHERE_portion(item1,item2,s1,dict):
+    if(item1=='Users' or item1=='Answers'):
+        s1+=dict[item1]+".uid = "
+    else:
+        s1+=dict[item1]+".QuestionedBy = "
+    if(item2=='Users' or item2=='Answers'):
+        s1+=dict[item2]+".uid "
+    else:
+        s1+=dict[item2]+".QuestionedBy"
+    return s1;
+
+if __name__=="__main__":
+    main()

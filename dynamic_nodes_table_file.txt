@@ -1,0 +1,11 @@
+answers - Answers
+Ninja - Users - Name
+questions - QuestionsDataSet
+Tim - Users - Name
+Follows - QuestionsDataSet - Follows
+Level - Users - Level
+Upvotes - Answers - Upvotes
+Downvotes - Answers - Downvotes
+Ratings - Answers - Ratings
+BestAnswersCount - Users - BestAnswersCount
+Points - Users - Points
