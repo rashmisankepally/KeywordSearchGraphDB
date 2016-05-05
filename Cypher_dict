@@ -1,0 +1,9 @@
+list some - MATCH
+related to - WHERE
+how many - RETURN count
+what is - MATCH(n
+'s - RETURN 
+of - MATCH
+who - MATCH(n:user)
+maximum - RETURN max
+minimum - RETURN min
