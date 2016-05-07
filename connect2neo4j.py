@@ -1,6 +1,7 @@
 from py2neo import authenticate, Graph
 import sys
 from nltk.stem import *
+import re
 
 def main():
     authenticate("localhost:7474", "neo4j", "tinni1989")
@@ -9,22 +10,38 @@ def main():
     stemmer = PorterStemmer()
     
     #static_nodes_file
-    dynamic_nodes_set = open(sys.argv[1],'r').read().split(' ')
+    dynamic_nodes_set = open(sys.argv[1],'r').read().split(' ; ')
     query_string = raw_input("Enter Query: ")
-    query = query_string.split(' ')
+    l = query_string.split('\'')[1::2]
+    
     static_nodes=[]
     dynamic_nodes=[]
+    for e in l:
+        if(e!=''):
+            e1="\'"+e+"\'"
+            query_string=query_string.replace(e1,'')
+            count=0;
+            for d in dynamic_nodes_set:
+                if((stemmer.stem(e)).lower() == (stemmer.stem(d)).lower()):
+                    dynamic_nodes.append(e);
+                    count=1;
+                    break;
+            if(count==0):
+                static_nodes.append(e)
+
+    query = query_string.split(' ')
     for keyword in query:
-        count=0;
-        for d in dynamic_nodes_set:
-            if((stemmer.stem(keyword)).lower() == (stemmer.stem(d)).lower()):
-                dynamic_nodes.append(keyword);
-                count=1;
-        if(count==0):
-            static_nodes.append(keyword)
+        if(keyword!=''):
+            count=0;
+            for d in dynamic_nodes_set:
+                if((stemmer.stem(keyword)).lower() == (stemmer.stem(d)).lower() ):
+                    dynamic_nodes.append(keyword);
+                    count=1;
+                    break;
+            if(count==0):
+                static_nodes.append(keyword)
     
     print static_nodes
-    
 
     #dynamic_nodes_file
     dynamic_nodes_file = open(sys.argv[2],'r').read().split('\n')
@@ -84,7 +101,7 @@ def main():
     for i in xrange(1,len(temp1)):
         if(i>1):
             s1+=" AND "
-        s1=WHERE_portion(temp1[0],temp1[i],s1,dict);
+        s1=WHERE_portion(temp1[0],temp1[i],s1,dict,dynamic_nodes);
     print s1;
 
     for i in xrange(0,len(column_name)):
@@ -92,7 +109,7 @@ def main():
             if flag==0:
                 flag=1;
                 s1+=" WHERE "
-            elif(i>0):
+            elif(i>0 or flag==1):
                 s1+=" AND "
             s1+= dict[table_name[i]]+"."+column_name[i]+" = \'"+dynamic_nodes[i]+"\'"
 
@@ -101,8 +118,12 @@ def main():
     s1+=" RETURN "
     already=0;
     if 'many' in static_nodes or 'count' in static_nodes or 'number' in static_nodes :
+        alrdy=0
         for i in xrange(0,len(dynamic_nodes)):
-            if(column_name[i] != dynamic_nodes[i] and already==0):
+            if(column_name[i] == dynamic_nodes[i]):
+                alrdy=1;
+        for i in xrange(0,len(dynamic_nodes)):
+            if(column_name[i] != dynamic_nodes[i] and alrdy==0):
                 if(already>0):
                     s1+=","
                 s1+=" COUNT(*) "
@@ -126,6 +147,7 @@ def main():
 
 
     print s1
+
     if 'maximum' in static_nodes or 'minimum' in static_nodes or 'order' in static_nodes :
         s1+=" ORDER BY toInt("
         if 'maximum' in static_nodes:
@@ -160,15 +182,20 @@ def main():
     print results
 
 
-def WHERE_portion(item1,item2,s1,dict):
+def WHERE_portion(item1,item2,s1,dict,dynamic_nodes):
     if(item1=='Users' or item1=='Answers'):
         s1+=dict[item1]+".uid = "
-    else:
+    elif('questions' in dynamic_nodes):
         s1+=dict[item1]+".QuestionedBy = "
+    else:
+        s1+=dict[item1]+".AnsweredBy = "
+    
     if(item2=='Users' or item2=='Answers'):
         s1+=dict[item2]+".uid "
-    else:
+    elif('questions' in dynamic_nodes):
         s1+=dict[item2]+".QuestionedBy"
+    else:
+        s1+=dict[item2]+".AnsweredBy"
     return s1;
 
 if __name__=="__main__":
