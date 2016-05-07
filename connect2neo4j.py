@@ -52,6 +52,9 @@ def main():
             temp = line.split(" - ")
             if((stemmer.stem(dynamic_nodes[i])).lower() == (stemmer.stem(temp[0])).lower()):
                 dynamic_nodes[i]=temp[0];
+                break;
+    if('who' in static_nodes or 'Who' in static_nodes):
+        dynamic_nodes.append('Name')
 
     print dynamic_nodes
 
@@ -117,7 +120,7 @@ def main():
 
     s1+=" RETURN "
     already=0;
-    if 'many' in static_nodes or 'count' in static_nodes or 'number' in static_nodes :
+    if 'many' in static_nodes or 'count' in static_nodes or 'number' in static_nodes or 'numbers' in static_nodes:
         alrdy=0
         for i in xrange(0,len(dynamic_nodes)):
             if(column_name[i] == dynamic_nodes[i]):
@@ -141,8 +144,6 @@ def main():
                     s1+=","
                 s1+= dict[table_name[i]]+"."+dynamic_nodes[i]
                 already=1;
-    if('who' in static_nodes):
-        s1+= " , "+dict['Users']+".Name"
 
 
 
@@ -185,17 +186,13 @@ def main():
 def WHERE_portion(item1,item2,s1,dict,dynamic_nodes):
     if(item1=='Users' or item1=='Answers'):
         s1+=dict[item1]+".uid = "
-    elif('questions' in dynamic_nodes):
-        s1+=dict[item1]+".QuestionedBy = "
     else:
-        s1+=dict[item1]+".AnsweredBy = "
+        s1+=dict[item1]+".QuestionedBy = "
     
     if(item2=='Users' or item2=='Answers'):
         s1+=dict[item2]+".uid "
-    elif('questions' in dynamic_nodes):
-        s1+=dict[item2]+".QuestionedBy"
     else:
-        s1+=dict[item2]+".AnsweredBy"
+        s1+=dict[item2]+".QuestionedBy"
     return s1;
 
 if __name__=="__main__":
