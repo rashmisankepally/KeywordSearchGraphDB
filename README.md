@@ -9,6 +9,7 @@ This s organized in two parts:
 
 
 
-For the second part(converting natural language queries to Cypher queries and querying the database)\n
-Run the code : python connect2neo4j.py dynamic_nodes_file.txt dynamic_nodes_table_file.txt\n
+For the second part(converting natural language queries to Cypher queries and querying the database)
+
+Run the code : python connect2neo4j.py dynamic_nodes_file.txt dynamic_nodes_table_file.txt
 Then input your query
