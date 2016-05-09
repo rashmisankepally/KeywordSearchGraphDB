@@ -7,7 +7,7 @@ This is organized in two parts:
 1. Query suggestions
 
 Run command is: 
-python querySuggest.py <Cypher_dict> <dynamic_nodes_table_file.txt>
+python querySuggest.py Cypher_dict dynamic_nodes_table_file.txt
 
 2. converting natural language queries to Cypher queries and querying the database
 
