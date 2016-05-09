@@ -1,15 +1,20 @@
+#Run the code : python connect2neo4j.py dynamic_nodes_file.txt dynamic_nodes_table_file.txt
+#Then input your query
+
+
 from py2neo import authenticate, Graph
 import sys
 from nltk.stem import *
 import re
 
 def main():
-    authenticate("localhost:7474", "neo4j", "tinni1989")
+    authenticate("localhost:7474", "username", "password")#Change the username and password to your account ones
     graph = Graph("http://localhost:7474/db/data/")
     
     stemmer = PorterStemmer()
     
-    #static_nodes_file
+    #reading the file containing all the dynamic nodes and parsing the input query based on that into
+    #static and dynamic nodes
     dynamic_nodes_set = open(sys.argv[1],'r').read().split(' ; ')
     query_string = raw_input("Enter Query: ")
     l = query_string.split('\'')[1::2]
@@ -43,7 +48,8 @@ def main():
     
     print static_nodes
 
-    #dynamic_nodes_file
+    #reading the file containing dynamic nodes, the corresponding table names and
+    #column names from the database
     dynamic_nodes_file = open(sys.argv[2],'r').read().split('\n')
 
 
@@ -58,12 +64,11 @@ def main():
 
     print dynamic_nodes
 
+    #store the table names and column names for each dynamci nodes
     table_name=[];
     column_name=[];
     for items in dynamic_nodes:
-        #print items
         for line in dynamic_nodes_file:
-            #print line
             temp = line.split(" - ")
             if(items == temp[0]):
                 table_name.append(temp[1])
@@ -80,6 +85,7 @@ def main():
     for item in table_name:
         temp.add(item);
 
+    #Write the MATCH section
     dict={};
     count=1;
     temp1=[];
@@ -96,6 +102,7 @@ def main():
     print s1
     print temp1
 
+    #Write the WHERE section
     flag=0;
     if(len(temp)>1):
         s1+=" WHERE ";
@@ -118,6 +125,7 @@ def main():
 
     print s1
 
+    #write the RETURN section
     s1+=" RETURN "
     already=0;
     if 'many' in static_nodes or 'count' in static_nodes or 'number' in static_nodes or 'numbers' in static_nodes:
@@ -183,6 +191,7 @@ def main():
     print results
 
 
+#function to generate the join condition between multiple tables
 def WHERE_portion(item1,item2,s1,dict,dynamic_nodes):
     if(item1=='Users' or item1=='Answers'):
         s1+=dict[item1]+".uid = "
