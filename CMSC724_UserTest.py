@@ -2,7 +2,7 @@ import time
 import sys
 from py2neo import authenticate, Graph
 
-authenticate("localhost:7474", "neo4j", "tinni1989")
+authenticate("localhost:7474", "username", "password")
 graph = Graph("http://localhost:7474/db/data/")
 
 print " In this sample you will be given 3 queries. You need to convert them to Cypher queries:"
